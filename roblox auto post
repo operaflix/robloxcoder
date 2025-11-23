@@ -1,53 +1,98 @@
-// Roblox Auto Poster - Plak dit in de browser console
+// Roblox Auto Poster - ENGLISH VERSION
 (function() {
     'use strict';
     
-    // Configuratie - pas deze waarden aan
     const config = {
-        tekst: "https://www.roblox.com/share?code=02c4589b59d6fb40888620df677c49ec&type=Server",  // Verander deze tekst
-        wachtTijd: 2000,  // Wacht 2 seconden tussen acties (in milliseconden)
-        maxPogingen: 10   // Maximum aantal pogingen om elementen te vinden
+        texts: [
+            "🔥 JOIN NOW 🔥 https://www.roblox.com/share?code=02c4589b59d6fb40888620df677c49ec&type=Server 🔥 FREE REWARDS 🔥",
+            "🚀 ACTIVE SERVER 🚀 https://www.roblox.com/share?code=02c4589b59d6fb40888620df677c49ec&type=Server 🚀 DAILY GIVEAWAYS 🚀",
+            "💎 EXCLUSIVE ACCESS 💎 https://www.roblox.com/share?code=02c4589b59d6fb40888620df677c49ec&type=Server 💎 LIMITED TIME 💎",
+            "🎯 BEST SERVER 🎯 https://www.roblox.com/share?code=02c4589b59d6fb40888620df677c49ec&type=Server 🎯 JOIN FAST 🎯",
+            "⚡ 24/7 ACTIVE ⚡ https://www.roblox.com/share?code=02c4589b59d6fb40888620df677c49ec&type=Server ⚡ DON'T MISS ⚡"
+        ],
+        waitTime: 2000,
+        intervalTime: 300,
+        maxAttempts: 1000000,
+        maxPosts: 3000000,
+        randomDelay: true
     };
     
-    console.log("🤖 Roblox Auto Poster gestart...");
+    let postCount = 0;
+    let isRunning = true;
     
-    function wacht(ms) {
+    console.log("🤖 AUTO POSTER STARTED");
+    
+    function wait(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
     
-    async function zoekElement(selector, beschrijving) {
-        for (let i = 0; i < config.maxPogingen; i++) {
-            const element = document.querySelector(selector);
-            if (element) {
-                console.log(`✅ ${beschrijving} gevonden`);
-                return element;
-            }
-            console.log(`⏳ Wachten op ${beschrijving}... (poging ${i + 1})`);
-            await wacht(500);
-        }
-        throw new Error(`❌ ${beschrijving} niet gevonden na ${config.maxPogingen} pogingen`);
+    function getRandomText() {
+        return config.texts[Math.floor(Math.random() * config.texts.length)];
     }
     
-    async function typTekst(element, tekst) {
+    function getRandomDelay() {
+        if (!config.randomDelay) return config.intervalTime;
+        return config.intervalTime + Math.random() * 5000;
+    }
+    
+    async function findElement(selector, description) {
+        for (let i = 0; i < config.maxAttempts; i++) {
+            const element = document.querySelector(selector);
+            if (element) {
+                console.log(`✅ ${description} FOUND`);
+                return element;
+            }
+            console.log(`⏳ WAITING FOR ${description}... (ATTEMPT ${i + 1})`);
+            await wait(500);
+        }
+        throw new Error(`❌ ${description} NOT FOUND`);
+    }
+    
+    async function typeText(element, text) {
         element.focus();
         element.value = '';
         
-        // Simuleer menselijk typen
-        for (let char of tekst) {
+        for (let char of text) {
             element.value += char;
             element.dispatchEvent(new Event('input', { bubbles: true }));
-            await wacht(50 + Math.random() * 100); // Willekeurige vertraging
+            element.dispatchEvent(new Event('change', { bubbles: true }));
+            await wait(30 + Math.random() * 50);
         }
         
-        console.log(`📝 Tekst ingevuld: "${tekst}"`);
+        console.log(`📝 TEXT TYPED: "${text}"`);
     }
     
-    async function automatiseerPost() {
+    function triggerAngularClick(element) {
+        const angularElement = angular.element(element);
+        const scope = angularElement.scope();
+        
+        if (scope && scope.sendPost) {
+            console.log("🔄 ANGULAR TRIGGERED");
+            scope.$apply(() => {
+                scope.sendPost();
+            });
+            return true;
+        }
+        
         try {
-            console.log("🔍 Zoeken naar tekstveld...");
+            angularElement.triggerHandler('click');
+            console.log("🔄 ANGULAR CLICK");
+            return true;
+        } catch (e) {
+            console.log("❌ ANGULAR FAILED, USING NATIVE CLICK");
+        }
+        
+        element.click();
+        console.log("🖱️ NATIVE CLICK");
+        return true;
+    }
+    
+    async function createPost() {
+        try {
+            postCount++;
+            console.log(`\n🔄 POST ${postCount} STARTING...`);
             
-            // Zoek naar tekstvelden - probeer verschillende selectors
-            const tekstSelectors = [
+            const textSelectors = [
                 'textarea',
                 'input[type="text"]',
                 '[contenteditable="true"]',
@@ -56,110 +101,132 @@
                 '.comment-input'
             ];
             
-            let tekstveld = null;
-            for (let selector of tekstSelectors) {
-                tekstveld = document.querySelector(selector);
-                if (tekstveld && tekstveld.offsetParent !== null) {
-                    break;
-                }
+            let textField = null;
+            for (let selector of textSelectors) {
+                textField = document.querySelector(selector);
+                if (textField && textField.offsetParent !== null) break;
             }
             
-            if (!tekstveld) {
-                // Als geen standaard veld gevonden, zoek naar elementen met placeholder tekst
-                const placeholders = ['Wat is er nieuw?', 'Post something...', 'Write a post...', 'Share something...'];
+            if (!textField) {
+                const placeholders = ['What\'s new?', 'Post something...', 'Write a post...', 'Share something...'];
                 for (let placeholder of placeholders) {
                     const element = document.querySelector(`[placeholder*="${placeholder}"]`);
                     if (element) {
-                        tekstveld = element;
+                        textField = element;
                         break;
                     }
                 }
             }
             
-            if (!tekstveld) {
-                throw new Error("Geen geschikt tekstveld gevonden");
-            }
+            if (!textField) throw new Error("NO TEXT FIELD FOUND");
             
-            console.log("✅ Tekstveld gevonden");
-            await wacht(config.wachtTijd);
+            console.log("✅ TEXT FIELD FOUND");
+            await wait(config.waitTime);
             
-            // Vul tekst in
-            await typTekst(tekstveld, config.tekst);
-            await wacht(config.wachtTijd);
+            const text = getRandomText();
+            await typeText(textField, text);
+            await wait(config.waitTime);
             
-            // Zoek post knop
-            console.log("🔍 Zoeken naar post knop...");
-            
-            const knopSelectors = [
-                'button[type="submit"]',
-                '.btn-primary',
-                '.post-button',
-                '.submit-btn',
-                'input[type="submit"]',
-                'button:contains("Post")',
-                'button:contains("Share")',
-                'button:contains("Publish")'
+            const buttonSelectors = [
+                '#postButton',
+                'button[ng-click*="sendPost"]',
+                'button[ng-click*="Post"]',
+                '.btn-control-md',
+                '.group-form-button',
+                'button:contains("Post")'
             ];
             
-            let postKnop = null;
-            for (let selector of knopSelectors) {
-                // Voor selectors met :contains (jQuery style)
-                if (selector.includes('contains')) {
-                    const knopTekst = selector.match(/contains\("([^"]+)"\)/)[1];
-                    const knoppen = document.querySelectorAll('button');
-                    for (let knop of knoppen) {
-                        if (knop.textContent.includes(knopTekst)) {
-                            postKnop = knop;
-                            break;
-                        }
-                    }
-                } else {
-                    postKnop = document.querySelector(selector);
-                }
-                if (postKnop && postKnop.offsetParent !== null) {
+            let postButton = null;
+            for (let selector of buttonSelectors) {
+                postButton = document.querySelector(selector);
+                if (postButton && postButton.offsetParent !== null) {
+                    console.log(`✅ BUTTON FOUND: ${selector}`);
                     break;
                 }
             }
             
-            if (!postKnop) {
-                throw new Error("Geen post knop gevonden");
+            if (!postButton) throw new Error("NO POST BUTTON FOUND");
+            
+            console.log("✅ POST BUTTON FOUND");
+            
+            if (postButton.disabled) {
+                console.log("⚠️ BUTTON DISABLED, RETRYING...");
+                textField.dispatchEvent(new Event('input', { bubbles: true }));
+                await wait(1000);
             }
             
-            console.log("✅ Post knop gevonden");
-            await wacht(config.wachtTijd);
+            await wait(config.waitTime);
             
-            // Klik op post knop
-            console.log("🖱️ Klikken op post knop...");
-            postKnop.click();
+            console.log("🖱️ CLICKING POST BUTTON...");
+            triggerAngularClick(postButton);
             
-            console.log("🎉 Post geplaatst!");
+            console.log(`🎉 POST ${postCount} COMPLETE!`);
+            
+            await wait(3000);
+            
+            if (config.maxPosts > 0 && postCount >= config.maxPosts) {
+                console.log("🏁 MAX POSTS REACHED. STOPPING...");
+                isRunning = false;
+                return false;
+            }
+            
+            return true;
             
         } catch (error) {
-            console.error("❌ Fout:", error.message);
-            console.log("💡 Tips:");
-            console.log("- Zorg dat je op de juiste pagina bent");
-            console.log("- Pas de configuratie aan met je eigen tekst");
-            console.log("- Mogelijk moet je handmatig naar het tekstveld navigeren");
+            console.error("❌ ERROR:", error.message);
+            console.log("💡 RETRYING...");
+            return true;
         }
     }
     
-    // GUI voor gebruiker
-    console.log(`
-🤖 ROBOX AUTO POSTER
-────────────────────
-Gebruik: 
-1. Ga naar de Roblox pagina waar je wilt posten
-2. Pas eventueel de tekst aan in de configuratie
-3. Het script zal automatisch proberen te posten
+    async function startLoop() {
+        console.log(`
+🤖 ROBLOX AUTO POSTER
+─────────────────────
+📝 TEXTS: ${config.texts.length} VARIATIONS
+⏱️  WAIT: ${config.waitTime}ms
+🔄 INTERVAL: ${config.intervalTime}ms
+📊 MAX: ${config.maxPosts === 0 ? 'INFINITE' : config.maxPosts}
 
-Configuratie:
-📝 Tekst: "${config.tekst}"
-⏱️  Wachtijd: ${config.wachtTijd}ms
-🔄 Pogingen: ${config.maxPogingen}
-
-Start automatisch over 3 seconden...
-    `);
+STARTING IN 3 SECONDS...
+        `);
+        
+        await wait(3000);
+        
+        while (isRunning) {
+            await createPost();
+            if (!isRunning) break;
+            
+            const delay = getRandomDelay();
+            console.log(`⏰ NEXT POST IN ${Math.round(delay/1000)}s...`);
+            await wait(delay);
+            
+            if (postCount % 5 === 0) {
+                console.log("🔄 REFRESHING PAGE...");
+                location.reload();
+                await wait(5000);
+            }
+        }
+        
+        console.log("🛑 AUTO POSTER STOPPED.");
+    }
     
-    setTimeout(automatiseerPost, 3000);
+    window.stopAutoPoster = function() {
+        console.log("🛑 MANUAL STOP!");
+        isRunning = false;
+    };
+    
+    window.startAutoPoster = function() {
+        if (!isRunning) {
+            isRunning = true;
+            startLoop();
+        }
+    };
+    
+    console.log("🎛️  CONTROLS:");
+    console.log("- stopAutoPoster() - STOP");
+    console.log("- startAutoPoster() - START");
+    
+    startLoop();
     
 })();
