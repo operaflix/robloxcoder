@@ -1,0 +1,165 @@
+// Roblox Auto Poster - Plak dit in de browser console
+(function() {
+    'use strict';
+    
+    // Configuratie - pas deze waarden aan
+    const config = {
+        tekst: "https://www.roblox.com/share?code=02c4589b59d6fb40888620df677c49ec&type=Server",  // Verander deze tekst
+        wachtTijd: 2000,  // Wacht 2 seconden tussen acties (in milliseconden)
+        maxPogingen: 10   // Maximum aantal pogingen om elementen te vinden
+    };
+    
+    console.log("🤖 Roblox Auto Poster gestart...");
+    
+    function wacht(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    async function zoekElement(selector, beschrijving) {
+        for (let i = 0; i < config.maxPogingen; i++) {
+            const element = document.querySelector(selector);
+            if (element) {
+                console.log(`✅ ${beschrijving} gevonden`);
+                return element;
+            }
+            console.log(`⏳ Wachten op ${beschrijving}... (poging ${i + 1})`);
+            await wacht(500);
+        }
+        throw new Error(`❌ ${beschrijving} niet gevonden na ${config.maxPogingen} pogingen`);
+    }
+    
+    async function typTekst(element, tekst) {
+        element.focus();
+        element.value = '';
+        
+        // Simuleer menselijk typen
+        for (let char of tekst) {
+            element.value += char;
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            await wacht(50 + Math.random() * 100); // Willekeurige vertraging
+        }
+        
+        console.log(`📝 Tekst ingevuld: "${tekst}"`);
+    }
+    
+    async function automatiseerPost() {
+        try {
+            console.log("🔍 Zoeken naar tekstveld...");
+            
+            // Zoek naar tekstvelden - probeer verschillende selectors
+            const tekstSelectors = [
+                'textarea',
+                'input[type="text"]',
+                '[contenteditable="true"]',
+                '.text-field',
+                '.post-input',
+                '.comment-input'
+            ];
+            
+            let tekstveld = null;
+            for (let selector of tekstSelectors) {
+                tekstveld = document.querySelector(selector);
+                if (tekstveld && tekstveld.offsetParent !== null) {
+                    break;
+                }
+            }
+            
+            if (!tekstveld) {
+                // Als geen standaard veld gevonden, zoek naar elementen met placeholder tekst
+                const placeholders = ['Wat is er nieuw?', 'Post something...', 'Write a post...', 'Share something...'];
+                for (let placeholder of placeholders) {
+                    const element = document.querySelector(`[placeholder*="${placeholder}"]`);
+                    if (element) {
+                        tekstveld = element;
+                        break;
+                    }
+                }
+            }
+            
+            if (!tekstveld) {
+                throw new Error("Geen geschikt tekstveld gevonden");
+            }
+            
+            console.log("✅ Tekstveld gevonden");
+            await wacht(config.wachtTijd);
+            
+            // Vul tekst in
+            await typTekst(tekstveld, config.tekst);
+            await wacht(config.wachtTijd);
+            
+            // Zoek post knop
+            console.log("🔍 Zoeken naar post knop...");
+            
+            const knopSelectors = [
+                'button[type="submit"]',
+                '.btn-primary',
+                '.post-button',
+                '.submit-btn',
+                'input[type="submit"]',
+                'button:contains("Post")',
+                'button:contains("Share")',
+                'button:contains("Publish")'
+            ];
+            
+            let postKnop = null;
+            for (let selector of knopSelectors) {
+                // Voor selectors met :contains (jQuery style)
+                if (selector.includes('contains')) {
+                    const knopTekst = selector.match(/contains\("([^"]+)"\)/)[1];
+                    const knoppen = document.querySelectorAll('button');
+                    for (let knop of knoppen) {
+                        if (knop.textContent.includes(knopTekst)) {
+                            postKnop = knop;
+                            break;
+                        }
+                    }
+                } else {
+                    postKnop = document.querySelector(selector);
+                }
+                if (postKnop && postKnop.offsetParent !== null) {
+                    break;
+                }
+            }
+            
+            if (!postKnop) {
+                throw new Error("Geen post knop gevonden");
+            }
+            
+            console.log("✅ Post knop gevonden");
+            await wacht(config.wachtTijd);
+            
+            // Klik op post knop
+            console.log("🖱️ Klikken op post knop...");
+            postKnop.click();
+            
+            console.log("🎉 Post geplaatst!");
+            
+        } catch (error) {
+            console.error("❌ Fout:", error.message);
+            console.log("💡 Tips:");
+            console.log("- Zorg dat je op de juiste pagina bent");
+            console.log("- Pas de configuratie aan met je eigen tekst");
+            console.log("- Mogelijk moet je handmatig naar het tekstveld navigeren");
+        }
+    }
+    
+    // GUI voor gebruiker
+    console.log(`
+🤖 ROBOX AUTO POSTER
+────────────────────
+Gebruik: 
+1. Ga naar de Roblox pagina waar je wilt posten
+2. Pas eventueel de tekst aan in de configuratie
+3. Het script zal automatisch proberen te posten
+
+Configuratie:
+📝 Tekst: "${config.tekst}"
+⏱️  Wachtijd: ${config.wachtTijd}ms
+🔄 Pogingen: ${config.maxPogingen}
+
+Start automatisch over 3 seconden...
+    `);
+    
+    setTimeout(automatiseerPost, 3000);
+    
+})();
