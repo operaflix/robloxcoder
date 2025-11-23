@@ -1,33 +1,42 @@
-// Roblox Auto Poster - ENGLISH VERSION
 (function() {
     'use strict';
     
     const config = {
-        texts: [
-            "🔥 JOIN NOW 🔥 https://www.roblox.com/share?code=02c4589b59d6fb40888620df677c49ec&type=Server 🔥 FREE REWARDS 🔥",
+        baseTexts: [
             "🚀 ACTIVE SERVER 🚀 https://www.roblox.com/share?code=02c4589b59d6fb40888620df677c49ec&type=Server 🚀 DAILY GIVEAWAYS 🚀",
             "💎 EXCLUSIVE ACCESS 💎 https://www.roblox.com/share?code=02c4589b59d6fb40888620df677c49ec&type=Server 💎 LIMITED TIME 💎",
-            "🎯 BEST SERVER 🎯 https://www.roblox.com/share?code=02c4589b59d6fb40888620df677c49ec&type=Server 🎯 JOIN FAST 🎯",
+            "🎯 BEST SERVER 🚀 https://www.roblox.com/share?code=02c4589b59d6fb40888620df677c49ec&type=Server 🎯 JOIN FAST 🎯",
             "⚡ 24/7 ACTIVE ⚡ https://www.roblox.com/share?code=02c4589b59d6fb40888620df677c49ec&type=Server ⚡ DON'T MISS ⚡"
         ],
         waitTime: 2000,
         intervalTime: 300,
         maxAttempts: 1000000,
-        maxPosts: 3000000,
+        maxPosts: 0,
         randomDelay: true
     };
     
     let postCount = 0;
     let isRunning = true;
     
-    console.log("🤖 AUTO POSTER STARTED");
+    console.log("🤖 AUTO POSTER STARTED - INFINITE MODE WITH RANDOM TEXT");
     
     function wait(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
     
+    function generateRandomCode() {
+        const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        for (let i = 0; i < 5; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+    }
+    
     function getRandomText() {
-        return config.texts[Math.floor(Math.random() * config.texts.length)];
+        const baseText = config.baseTexts[Math.floor(Math.random() * config.baseTexts.length)];
+        const randomCode = generateRandomCode();
+        return baseText + ' ' + randomCode;
     }
     
     function getRandomDelay() {
@@ -164,12 +173,6 @@
             
             await wait(3000);
             
-            if (config.maxPosts > 0 && postCount >= config.maxPosts) {
-                console.log("🏁 MAX POSTS REACHED. STOPPING...");
-                isRunning = false;
-                return false;
-            }
-            
             return true;
             
         } catch (error) {
@@ -181,12 +184,12 @@
     
     async function startLoop() {
         console.log(`
-🤖 ROBLOX AUTO POSTER
-─────────────────────
-📝 TEXTS: ${config.texts.length} VARIATIONS
+🤖 ROBLOX AUTO POSTER - INFINITE MODE WITH RANDOM CODES
+───────────────────────────────────────────────────────
+📝 TEXTS: ${config.baseTexts.length} VARIATIONS + RANDOM 5 CHAR CODE
 ⏱️  WAIT: ${config.waitTime}ms
 🔄 INTERVAL: ${config.intervalTime}ms
-📊 MAX: ${config.maxPosts === 0 ? 'INFINITE' : config.maxPosts}
+📊 MAX: INFINITE FOREVER
 
 STARTING IN 3 SECONDS...
         `);
@@ -200,12 +203,6 @@ STARTING IN 3 SECONDS...
             const delay = getRandomDelay();
             console.log(`⏰ NEXT POST IN ${Math.round(delay/1000)}s...`);
             await wait(delay);
-            
-            if (postCount % 5 === 0) {
-                console.log("🔄 REFRESHING PAGE...");
-                location.reload();
-                await wait(5000);
-            }
         }
         
         console.log("🛑 AUTO POSTER STOPPED.");
